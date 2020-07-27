@@ -82,10 +82,14 @@ def main(args=None):
 
         print('Preparing directories')
         i = 0
+        
         for dom, rpath in c.execute('SELECT domain,relativePath FROM Files WHERE flags=2'):
             print('{:.2%}'.format(i/count), end='\r')
-            mkdir_p(join(dom, rpath))
+            if dom == 'CameraRollDomain':
+                mkdir_p(join(dom, rpath))
+                print(join(dom, rpath))
             i += 1
+        
         print('Done')
 
         print('Counting files: ', end='')
@@ -96,20 +100,21 @@ def main(args=None):
         fails = open('fails.txt', mode='w+')
         i = 0
         for file, dom, rpath in c.execute('SELECT fileID,domain,relativePath FROM Files WHERE flags=1'):
-            file_to = join(dom, rpath)
-            try:
-                file_from = join(backup_path, file[:2], file)
-                if not args.copy:
-                    move(file_from, file_to)
-                else:
-                    copyfile(file_from, file_to)
-            except Exception as e:
-                print(file_from, 'caused an error!')
-                print(e)
-                print(file_from, file=fails)
+            if dom == 'CameraRollDomain':
+                file_to = join(dom, rpath)
+                try:
+                    file_from = join(backup_path, file[:2], file)
+                    if not args.copy:
+                        move(file_from, file_to)
+                    else:
+                        copyfile(file_from, file_to)
+                except Exception as e:
+                    print(file_from, 'caused an error!')
+                    print(e)
+                    print(file_from, file=fails)
 
-            print('{:.2%} of {}, {}'.format(i/count, count, file_to), end='\r')
-            i += 1
+                print('{:.2%} of {}, {}'.format(i/count, count, file_to), end='\r')
+                i += 1
         print('Done')
         print('Be sure to check fails.txt')
 
